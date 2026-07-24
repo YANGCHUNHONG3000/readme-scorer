@@ -118,7 +118,8 @@ def score_readme(owner, repo, meta, readme_text, root_files, headers):
         checks.append(("缺少清晰的项目名称/描述", 0, False))
 
     # +10 安装/快速开始
-    if re.search(r'#+\s*(install|installation|quick ?start|getting started|setup)', lower):
+    if re.search(r'#+\s*(install|installation|quick ?start|getting started|setup)', lower) or \
+       "pip install" in lower or "pip3 install" in lower:
         score += 10
         checks.append(("有安装/快速开始步骤", 10, True))
     else:
@@ -164,8 +165,20 @@ def score_readme(owner, repo, meta, readme_text, root_files, headers):
         checks.append((f"README 过短 (仅 {len(lines)} 行非空内容)", -15, False))
 
     # -20 占位符
+    # 排除表格行、代码块和已知关键词描述（如评分表里的说明文字）
+    # 只检测 markdown 正文中的占位符
+    lines_to_check = []
+    for line in readme_text.splitlines():
+        stripped = line.strip()
+        # 跳过表格行 | 和代码块 ```
+        if stripped.startswith("|") and stripped.endswith("|"):
+            continue
+        if stripped.startswith("```"):
+            continue
+        lines_to_check.append(stripped)
+    plain_text = "\n".join(lines_to_check).lower()
     placeholders = ["todo", "coming soon", "lorem ipsum", "tbd", "wip"]
-    found_ph = [p for p in placeholders if p in lower]
+    found_ph = [p for p in placeholders if p in plain_text]
     if found_ph:
         score -= 20
         checks.append((f"包含占位符文本: {', '.join(found_ph)}", -20, False))
