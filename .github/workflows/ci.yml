@@ -1,0 +1,20 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  basic-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - run: python -c "import readme_scorer; print('import OK')"
+      - run: python -c "
+from readme_scorer import parse_repo, get_headers, score_readme;
+assert parse_repo('owner/repo') == ('owner', 'repo');
+assert parse_repo('https://github.com/a/b') == ('a', 'b');
+print('parse_repo OK')
+"
